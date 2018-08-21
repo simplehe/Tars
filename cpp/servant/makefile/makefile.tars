@@ -31,9 +31,9 @@ ifneq ($(PB_SRC),)
 	LIB += -lprotobuf
 endif
 
-LOCAL_SRC   += $(sort $(wildcard *.cpp *.c))
+LOCAL_SRC   += $(sort $(wildcard *.cpp *.c) $(PB_CPP))
 
-LOCAL_OBJ   += $(patsubst %.cpp,%.o, $(patsubst %.c,%.o, $(LOCAL_SRC)))
+LOCAL_OBJ   += $(patsubst %.cpp,%.o, $(patsubst %.cc,%.o, $(LOCAL_SRC)))
 
 DEP_FILE    := $(foreach obj, $(LOCAL_OBJ), $(dir $(obj)).$(basename $(notdir $(obj))).d)
 
@@ -51,6 +51,14 @@ ifneq ($(TARS_SSL), )
 	#业务编译
 	CFLAGS += -DTARS_SSL=1
 	LIB += -lssl -lcrypto
+endif
+endif
+
+ifneq ($(TARS_HTTP2), 0)
+ifneq ($(TARS_HTTP2), )
+	#业务编译
+	CFLAGS += -DTARS_HTTP2=1
+	LIB += -lnghttp2
 endif
 endif
 
@@ -194,7 +202,7 @@ help:
 .%.d: %.cpp
 	@echo "update $@ ..."; \
 	echo -n $< | sed s/\.cpp/\.o:/ > $@; \
-	$(CC) $(INCLUDE) -MM $< | sed '1s/.*.://' >> $@;
+	$(CXX) $(CFLAGS) $(INCLUDE) -MM $< | sed '1s/.*.://' >> $@;
 
 %.o: %.cpp
 	$(CXX) $(CFLAGS) $(INCLUDE) -o $@ -c $<
